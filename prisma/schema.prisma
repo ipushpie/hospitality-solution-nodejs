@@ -13,3 +13,30 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Hotel {
+  id       Int    @id @default(autoincrement())
+  name     String
+  location String
+  rooms    Room[]
+}
+
+model Room {
+  id          Int       @id @default(autoincrement())
+  number      String
+  type        String
+  price       Float
+  isAvailable Boolean   @default(true)
+  hotel       Hotel     @relation(fields: [hotelId], references: [id])
+  hotelId     Int
+  bookings    Booking[] @relation(name: "RoomToBooking")
+}
+
+model Booking {
+  id        Int      @id @default(autoincrement())
+  guestName String
+  room      Room     @relation(fields: [roomId], references: [id], name: "RoomToBooking")
+  roomId    Int
+  checkIn   DateTime
+  checkOut  DateTime
+}
