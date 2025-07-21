@@ -1,6 +1,8 @@
 import express from 'express';
 import * as dotenv from 'dotenv';
 import hotelsRouter from './routes/hotels';
+import roomsRouter from './routes/rooms';
+import bookingsRouter from './routes/bookings';
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +22,8 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/hotels', hotelsRouter);
+app.use('/rooms', roomsRouter);
+app.use('/bookings', bookingsRouter);
 
 // Start the server
 app.listen(port, () => {
