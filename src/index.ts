@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 import hotelsRouter from './routes/hotels';
 import roomsRouter from './routes/rooms';
 import bookingsRouter from './routes/bookings';
+import authMiddleware from './middleware/authMiddleware';
 
 // Load environment variables
 dotenv.config();
@@ -21,10 +22,9 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-app.use('/hotels', hotelsRouter);
-app.use('/rooms', roomsRouter);
-app.use('/bookings', bookingsRouter);
-
+app.use('/hotels', authMiddleware, hotelsRouter);
+app.use('/rooms', authMiddleware, roomsRouter);
+app.use('/bookings', authMiddleware, bookingsRouter);
 // Start the server
 app.listen(port, () => {
   console.log(`Hotel Management System API is running on port ${port}`);

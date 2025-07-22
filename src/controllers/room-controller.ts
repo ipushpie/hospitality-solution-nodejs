@@ -1,49 +1,105 @@
 import { Request, Response } from 'express';
 import prisma from '../config/prisma';
+import { User } from '@prisma/client';
 
-export const getRooms = async (req: Request, res: Response) => {
+interface AuthRequest extends Request {
+  user?: User; 
+}
+
+export const getRooms = async (req: AuthRequest, res: Response) => {
+  if (req.user) {
     try {
-        const rooms = await prisma.room.findMany();
-        res.json(rooms);
+      const rooms = await prisma.room.findMany({
+        where: {
+          userId: req.user.id,
+        },
+      });
+      res.json(rooms);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to fetch rooms' });
+      console.error(error);
+      res.status(500).json({ error: 'Failed to fetch rooms' });
     }
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
 };
 
-export const createRoom = async (req: Request, res: Response) => {
+export const createRoom = async (req: AuthRequest, res: Response) => {
+  if (req.user) {
     try {
-        const newRoom = await prisma.room.create({
-            data: req.body,
-        });
-        res.status(201).json(newRoom);
+      const newRoom = await prisma.room.create({
+        data: {
+          ...req.body,
+          userId: req.user.id,
+        },
+      });
+      res.status(201).json(newRoom);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to create room' });
+      console.error(error);
+      res.status(500).json({ error: 'Failed to create room' });
     }
-}
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
+};
 
-export const updateRoom = async (req: Request, res: Response) => {
+export const updateRoom = async (req: AuthRequest, res: Response) => {
+  if (req.user) {
     try {
-        const updatedRoom = await prisma.room.update({
-            where: { id: Number(req.params.id) },
-            data: req.body,
-        });
-        res.json(updatedRoom);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to update room' });
-    }
-}
+      const roomId = Number(req.params.id);
 
-export const deleteRoom = async (req: Request, res: Response) => {
-    try {
-        await prisma.room.delete({
-            where: { id: Number(req.params.id) },
-        });
-        res.status(204).send();
+      const room = await prisma.room.findUnique({
+        where: { id: roomId },
+      });
+
+      if (!room) {
+        return res.status(404).json({ message: 'Room not found' });
+      }
+
+      if (room.userId !== req.user.id) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this room' });
+      }
+
+      const updatedRoom = await prisma.room.update({
+        where: { id: roomId },
+        data: req.body,
+      });
+      res.json(updatedRoom);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to delete room' });
+      console.error(error);
+      res.status(500).json({ error: 'Failed to update room' });
     }
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
+};
+
+export const deleteRoom = async (req: AuthRequest, res: Response) => {
+  if (req.user) {
+    try {
+      const roomId = Number(req.params.id);
+
+      const room = await prisma.room.findUnique({
+        where: { id: roomId },
+      });
+
+      if (!room) {
+        return res.status(404).json({ message: 'Room not found' });
+      }
+
+      if (room.userId !== req.user.id) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this room' });
+      }
+
+      await prisma.room.delete({
+        where: { id: roomId },
+      });
+      res.status(204).send();
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to delete room' });
+    }
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
 };

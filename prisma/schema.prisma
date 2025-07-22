@@ -13,11 +13,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  hotels    Hotel[]
+  rooms     Room[]
+  bookings  Booking[]
+}
+
 model Hotel {
   id       Int    @id @default(autoincrement())
   name     String
   location String
   rooms    Room[]
+  userId   Int
+  user     User   @relation(fields: [userId], references: [id])
 }
 
 model Room {
@@ -29,6 +43,8 @@ model Room {
   hotel       Hotel     @relation(fields: [hotelId], references: [id])
   hotelId     Int
   bookings    Booking[] @relation(name: "RoomToBooking")
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
 }
 
 model Booking {
@@ -38,4 +54,6 @@ model Booking {
   roomId    Int
   checkIn   DateTime
   checkOut  DateTime
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
 }
