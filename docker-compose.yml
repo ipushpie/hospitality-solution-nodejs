@@ -2,20 +2,20 @@
 services:
   postgres:
     image: postgres:15
-    container_name: hotel_postgres
+    container_name: hospitality_postgres
     restart: unless-stopped
     ports:
       - "5434:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: hotel_db
+      POSTGRES_DB: hospitality_db
     volumes:
-      - hotel_pgdata:/var/lib/postgresql/data
+      - hospitality_pgdata:/var/lib/postgresql/data
 
   app:
     build: .
-    container_name: hotel_app
+  container_name: hospitality_app
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -26,7 +26,7 @@ services:
 
   caddy:
     image: caddy:2-alpine
-    container_name: hotel_caddy
+    container_name: hospitality_caddy
     restart: unless-stopped
     ports:
       - "80:80"
@@ -36,4 +36,4 @@ services:
       - app
 
 volumes:
-  hotel_pgdata:
+  hospitality_pgdata:

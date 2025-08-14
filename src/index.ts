@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.send('Hotel Management System API is running!');
+  res.send('Hospitality Solution API is running!');
 });
 
 // Routes
@@ -29,5 +29,5 @@ app.use('/rooms', authMiddleware, roomsRouter);
 app.use('/bookings', authMiddleware, bookingsRouter);
 // Start the server
 app.listen(port, '0.0.0.0', () => {
-  console.log(`Hotel Management System API is running on port ${port}`);
+  console.log(`Hospitality Solution API is running on port ${port}`);
 });

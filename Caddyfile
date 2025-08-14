@@ -1,4 +1,4 @@
-# Caddyfile for hotel-management-system
+# Caddyfile for hospitality-solution-nodejs
 # Replace example.com with your domain for production
 
 :80 {

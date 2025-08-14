@@ -3,10 +3,10 @@ description: Repository Information Overview
 alwaysApply: true
 ---
 
-# Hotel Management System Information
+# Hospitality Solution Information
 
 ## Summary
-A TypeScript-based hotel management system API built with Express.js and Prisma ORM. The application provides endpoints for managing hotels, rooms, and bookings with a PostgreSQL database backend.
+A TypeScript-based hospitality solution API built with Express.js and Prisma ORM. The application provides endpoints for managing hotels, rooms, and bookings with a PostgreSQL database backend.
 
 ## Structure
 - **src/**: Contains the application source code
@@ -49,7 +49,7 @@ npm start
 **Environment**:
 - POSTGRES_USER: postgres
 - POSTGRES_PASSWORD: password
-- POSTGRES_DB: hotel_db
+- POSTGRES_DB: hospitality_db
 
 ## Database
 **Type**: PostgreSQL
