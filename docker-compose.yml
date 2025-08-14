@@ -13,5 +13,27 @@ services:
     volumes:
       - hotel_pgdata:/var/lib/postgresql/data
 
+  app:
+    build: .
+    container_name: hotel_app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - postgres
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: hotel_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - app
+
 volumes:
   hotel_pgdata:

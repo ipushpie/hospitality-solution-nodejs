@@ -4,13 +4,14 @@ import hotelsRouter from './routes/hotels';
 import roomsRouter from './routes/rooms';
 import bookingsRouter from './routes/bookings';
 import authMiddleware from './middleware/authMiddleware';
+import authRouter from './routes/auth';
 
 // Load environment variables
 dotenv.config();
 
 // Initialize Express app
 const app = express();
-const port = process.env.PORT || 8080;
+const port = Number(process.env.PORT) || 8080;
 
 // Middleware setup
 app.use(express.json());
@@ -22,10 +23,11 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
+app.use('/auth', authRouter);
 app.use('/hotels', authMiddleware, hotelsRouter);
 app.use('/rooms', authMiddleware, roomsRouter);
 app.use('/bookings', authMiddleware, bookingsRouter);
 // Start the server
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Hotel Management System API is running on port ${port}`);
 });

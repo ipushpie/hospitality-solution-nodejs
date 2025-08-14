@@ -1,0 +1,6 @@
+# Caddyfile for hotel-management-system
+# Replace example.com with your domain for production
+
+:80 {
+    reverse_proxy app:8080
+}
