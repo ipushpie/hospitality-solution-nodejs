@@ -15,7 +15,7 @@ services:
 
   app:
     build: .
-  container_name: hospitality_app
+    container_name: hospitality_app
     restart: unless-stopped
     environment:
       - NODE_ENV=production
