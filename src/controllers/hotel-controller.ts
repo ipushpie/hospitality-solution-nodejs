@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/prisma';
-import { User } from '@prisma/client';
+import { CacheService } from '../config/redis';
+import { User } from '../types/user';
 
 
 interface AuthRequest extends Request {
@@ -22,6 +23,10 @@ export const createHotel = async (req: AuthRequest, res: Response) => {
         },
       });
 
+      // Invalidate the user's hotels cache after creating a new hotel
+      const cacheKey = CacheService.generateKey('hotels', undefined, req.user.id);
+      await CacheService.del(cacheKey);
+
       res.status(201).json(newHotel);
     } catch (error) {
       console.error('Error creating hotel:', error);
@@ -36,12 +41,26 @@ export const createHotel = async (req: AuthRequest, res: Response) => {
 export const getHotels = async (req: AuthRequest, res: Response) => {
   if (req.user) {
     try {
-      // Fetch only the hotels that belong to the authenticated user
+      const cacheKey = CacheService.generateKey('hotels', undefined, req.user.id);
+      
+      // Try to get hotels from cache first
+      const cachedHotels = await CacheService.get(cacheKey);
+      if (cachedHotels) {
+        console.log('Hotels retrieved from cache');
+        return res.json(cachedHotels);
+      }
+
+      // Fetch only the hotels that belong to the authenticated user from database
       const hotels = await prisma.hotel.findMany({
         where: {
           userId: req.user.id, // Filter hotels by user ID
         },
       });
+
+      // Cache the hotels for future requests
+      await CacheService.set(cacheKey, hotels, 600); // Cache for 10 minutes
+      console.log('Hotels cached from database');
+
       res.json(hotels);
     } catch (error) {
       console.error('Error fetching hotels:', error);
@@ -85,6 +104,15 @@ export const updateHotel = async (req: AuthRequest, res: Response) => {
         },
       });
 
+      // Invalidate related cache entries
+      const userHotelsCacheKey = CacheService.generateKey('hotels', undefined, req.user.id);
+      const specificHotelCacheKey = CacheService.generateKey('hotel', hotelId, req.user.id);
+      
+      await Promise.all([
+        CacheService.del(userHotelsCacheKey),
+        CacheService.del(specificHotelCacheKey)
+      ]);
+
       res.json(updatedHotel);
     } catch (error) {
       console.error('Error updating hotel:', error);
@@ -122,6 +150,15 @@ export const deleteHotel = async (req: AuthRequest, res: Response) => {
           id: hotelId,
         },
       });
+
+      // Invalidate related cache entries
+      const userHotelsCacheKey = CacheService.generateKey('hotels', undefined, req.user.id);
+      const specificHotelCacheKey = CacheService.generateKey('hotel', hotelId, req.user.id);
+      
+      await Promise.all([
+        CacheService.del(userHotelsCacheKey),
+        CacheService.del(specificHotelCacheKey)
+      ]);
 
       res.json({ message: 'Hotel deleted successfully' });
     } catch (error) {

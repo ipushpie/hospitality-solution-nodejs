@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/prisma';
-import { User } from '@prisma/client';
+import { CacheService } from '../config/redis';
+import { User } from '../types/user';
 
 interface AuthRequest extends Request {
   user?: User; 
@@ -9,11 +10,26 @@ interface AuthRequest extends Request {
 export const getBookings = async (req: AuthRequest, res: Response) => {
   if (req.user) {
     try {
+      const cacheKey = CacheService.generateKey('bookings', undefined, req.user.id);
+      
+      // Try to get bookings from cache first
+      const cachedBookings = await CacheService.get(cacheKey);
+      if (cachedBookings) {
+        console.log('Bookings retrieved from cache');
+        return res.json(cachedBookings);
+      }
+
+      // Fetch bookings from database
       const bookings = await prisma.booking.findMany({
         where: {
           userId: req.user.id,
         },
       });
+
+      // Cache the bookings for future requests
+      await CacheService.set(cacheKey, bookings, 300); // Cache for 5 minutes (bookings change more frequently)
+      console.log('Bookings cached from database');
+
       res.json(bookings);
     } catch (error) {
       console.error(error);
