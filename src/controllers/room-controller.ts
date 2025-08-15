@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/prisma';
-import { User } from '@prisma/client';
+import { CacheService } from '../config/redis';
+import { User } from '../types/user';
 
 interface AuthRequest extends Request {
   user?: User; 
@@ -9,11 +10,26 @@ interface AuthRequest extends Request {
 export const getRooms = async (req: AuthRequest, res: Response) => {
   if (req.user) {
     try {
+      const cacheKey = CacheService.generateKey('rooms', undefined, req.user.id);
+      
+      // Try to get rooms from cache first
+      const cachedRooms = await CacheService.get(cacheKey);
+      if (cachedRooms) {
+        console.log('Rooms retrieved from cache');
+        return res.json(cachedRooms);
+      }
+
+      // Fetch rooms from database
       const rooms = await prisma.room.findMany({
         where: {
           userId: req.user.id,
         },
       });
+
+      // Cache the rooms for future requests
+      await CacheService.set(cacheKey, rooms, 600); // Cache for 10 minutes
+      console.log('Rooms cached from database');
+
       res.json(rooms);
     } catch (error) {
       console.error(error);
@@ -33,6 +49,11 @@ export const createRoom = async (req: AuthRequest, res: Response) => {
           userId: req.user.id,
         },
       });
+
+      // Invalidate the user's rooms cache after creating a new room
+      const cacheKey = CacheService.generateKey('rooms', undefined, req.user.id);
+      await CacheService.del(cacheKey);
+
       res.status(201).json(newRoom);
     } catch (error) {
       console.error(error);
@@ -64,6 +85,16 @@ export const updateRoom = async (req: AuthRequest, res: Response) => {
         where: { id: roomId },
         data: req.body,
       });
+
+      // Invalidate related cache entries
+      const userRoomsCacheKey = CacheService.generateKey('rooms', undefined, req.user.id);
+      const specificRoomCacheKey = CacheService.generateKey('room', roomId, req.user.id);
+      
+      await Promise.all([
+        CacheService.del(userRoomsCacheKey),
+        CacheService.del(specificRoomCacheKey)
+      ]);
+
       res.json(updatedRoom);
     } catch (error) {
       console.error(error);
@@ -94,6 +125,16 @@ export const deleteRoom = async (req: AuthRequest, res: Response) => {
       await prisma.room.delete({
         where: { id: roomId },
       });
+
+      // Invalidate related cache entries
+      const userRoomsCacheKey = CacheService.generateKey('rooms', undefined, req.user.id);
+      const specificRoomCacheKey = CacheService.generateKey('room', roomId, req.user.id);
+      
+      await Promise.all([
+        CacheService.del(userRoomsCacheKey),
+        CacheService.del(specificRoomCacheKey)
+      ]);
+
       res.status(204).send();
     } catch (error) {
       console.error(error);

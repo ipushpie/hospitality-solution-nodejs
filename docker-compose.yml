@@ -13,6 +13,16 @@ services:
     volumes:
       - hospitality_pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: hospitality_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - hospitality_redis_data:/data
+
   app:
     build: .
     container_name: hospitality_app
@@ -21,6 +31,7 @@ services:
       - NODE_ENV=production
     depends_on:
       - postgres
+      - redis
     expose:
       - "8080"
 
@@ -37,3 +48,4 @@ services:
 
 volumes:
   hospitality_pgdata:
+  hospitality_redis_data:
